@@ -1,6 +1,6 @@
 # COMPASS analysis of M. tuberculosis Resisters and Non-Resisters from Uganda
 
-This respository contains code to perform COMPASS analysis on Intracellular Cytokine Staining data from the Ugandan Resister and Non-Resister blood samples.
+This repository contains code to perform COMPASS analysis on Intracellular Cytokine Staining data from the Ugandan Resister and Non-Resister blood samples.
 
 ## Running the analysis
 
@@ -30,6 +30,7 @@ This respository contains code to perform COMPASS analysis on Intracellular Cyto
 4. Create an R project in this top-level folder. Open it in RStudio and run the following scripts (see `scripts` subfolder) in order:
 
 ```
+0_Copy_and_Rename_FCS_Files.R
 1_QC_SetupGSList_TBAgs.R  
 2_RunCompass_TBAgs.R  
 3_PostCompassPlots_TBAgs.R  
