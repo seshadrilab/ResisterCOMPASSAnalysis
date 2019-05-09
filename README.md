@@ -4,20 +4,21 @@ This repository contains code to perform COMPASS analysis on Intracellular Cytok
 
 ## Running the analysis
 
-1. First install the R packages listed under the Dependencies section.
-2. Next, clone or download this repository. The code depends on the current directory structure.
-3. Download the Resister cohort flow data from ImmPort (LINK TO BE ADDED) and place it into the `data` subfolder. The data folder should have the following structure:
+1. First clone or download this repository. The code depends on the current directory structure.  
+2. Next, install the R packages listed under the Dependencies section.
+3. Download the Resister cohort flow data from ImmPort (LINK TO BE ADDED), place it into the `data` subfolder, and unzip it. After running the `0_Copy_and_Rename_FCS_Files.R` script, the `data` subfolder will have the following structure:
 
 ```
 ├── data  
     ├── 20170518_HiRisk_VisitA_Only.txt (This file maps each sample to disease status)  
+    ├── ImmPort_FCS_FileMapping.tsv (This file is used to move and rename downloaded FCS files)
     ├── NonTBAgs  
     |   ├── 20180207_OMIP14_Batch1  
     |   |   ├── 20180209_NonTB_Antgns_OMIP14.xml  
-    |   |   └── 20180209_RSTR_NonTB_Atgns_Omip14_FCS (this folder contains FCS files)  
+    |   |   └── 20180209_RSTR_NonTB_Atgns_Omip14_FCS (this folder will contain FCS files)  
     |   └── 20180214_OMIP14_Batch2  
     |       ├── 20180216_NonTB_Antgns_OMIP14.xml  
-    |       └── 20180216_RSTR_NonTB_Atgns_Omip14_FCS (this folder contains FCS files)  
+    |       └── 20180216_RSTR_NonTB_Atgns_Omip14_FCS (this folder will contain FCS files)  
     └── TBAgs  
         ├── 20170605_RSTR_OMIP14_ICS_Batch1  
         |   ├── 20170607_RSTR_ICS_Batch1.xml  
@@ -30,7 +31,7 @@ This repository contains code to perform COMPASS analysis on Intracellular Cytok
 4. Create an R project in this top-level folder. Open it in RStudio and run the following scripts (see `scripts` subfolder) in order:
 
 ```
-0_Copy_and_Rename_FCS_Files.R
+0_Copy_and_Rename_FCS_Files.R  
 1_QC_SetupGSList_TBAgs.R  
 2_RunCompass_TBAgs.R  
 3_PostCompassPlots_TBAgs.R  

@@ -16,7 +16,7 @@ batch2FcsDirPath <- file.path(projectDir, "data/NonTBAgs/20180214_OMIP14_Batch2/
 
 # Additional variables
 qcOutDir <- file.path(projectDir, "out/QC/NonTBAgs")
-patientStatusFilePath <- file.path(projectDir, "data/20170518_HiRisk_VisitA_Only.txt")
+patientStatusFilePath <- file.path(projectDir, "data/20170518_HiRisk_VisitA_Only_1.txt")
 gatingSetListOutDir <- file.path(projectDir, "out/GatingSets/AllBatchesForCompass_NonTBAgs")
 
 # First read in the flowJoXmlPaths with desired keywords
