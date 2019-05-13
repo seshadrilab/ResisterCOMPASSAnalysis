@@ -18,14 +18,20 @@ batch2FcsDirPath <- file.path(projectDir, "data/NonTBAgs/20180214_OMIP14_Batch2/
 qcOutDir <- file.path(projectDir, "out/QC/NonTBAgs")
 patientStatusFilePath <- file.path(projectDir, "data/20170518_HiRisk_VisitA_Only_1.txt")
 gatingSetListOutDir <- file.path(projectDir, "out/GatingSets/AllBatchesForCompass_NonTBAgs")
+flowJoWorkspace_sampleID_FileMapping <- read.table(file.path(projectDir, "data/flowJoWorkspace_sampleID_FileMapping.tsv"), sep = "\t",
+                                                   header = T, colClasses = c("character", "numeric", "character"))
 
 # First read in the flowJoXmlPaths with desired keywords
 ws1 <- openWorkspace(flowJoXmlPath1)
 # getKeywords(ws1, "14521.fcs")
 keywords2import=c("PATIENT ID", "Comp", "Antigen", "PLATE NAME", "TUBE NAME", "WELL ID")
 sampleGroup <- "Samples"
+ws1_filemap <- subset(flowJoWorkspace_sampleID_FileMapping, Experiment == "NonTBAgs_B1")[, c("sampleID", "file")]
+missingFiles_b1 <- c("Specimen_001_D2_D02_122.fcs", "Specimen_001_D4_D04_124.fcs", "Specimen_001_D6_D06_126.fcs", "Specimen_001_D8_D08_128.fcs", "Specimen_001_E2_E02_130.fcs", "Specimen_001_E4_E04_132.fcs", "Specimen_001_E6_E06_134.fcs", "Specimen_001_E8_E08_136.fcs", "Specimen_001_F2_F02_138.fcs", "Specimen_001_F4_F04_140.fcs", "Specimen_001_F6_F06_142.fcs", "Specimen_001_F8_F08_144.fcs")
+ws1_filemap <- ws1_filemap[which(!(ws1_filemap$file %in% missingFiles_b1)),]
+ws1_filemap$file <- file.path(batch1FcsDirPath, ws1_filemap$file)
 gs1 <- parseWorkspace(ws1, name=sampleGroup, keywords=keywords2import,
-                      path=batch1FcsDirPath)
+                      path=ws1_filemap)
 png(file.path(qcOutDir, "Batch1GatingTree.png"))
 plot(gs1)
 dev.off()
@@ -33,8 +39,12 @@ dev.off()
 ws2 <- openWorkspace(flowJoXmlPath2)
 keywords2import=c("PATIENT ID", "Comp", "Antigen", "PLATE NAME", "TUBE NAME", "WELL ID")
 sampleGroup <- "Samples"
+ws2_filemap <- subset(flowJoWorkspace_sampleID_FileMapping, Experiment == "NonTBAgs_B2")[, c("sampleID", "file")]
+missingFiles_b2 <- c("Specimen_001_F2_F02_138.fcs", "Specimen_001_F4_F04_140.fcs", "Specimen_001_F6_F06_142.fcs", "Specimen_001_F8_F08_144.fcs")
+ws2_filemap <- ws2_filemap[which(!(ws2_filemap$file %in% missingFiles_b2)),]
+ws2_filemap$file <- file.path(batch2FcsDirPath, ws2_filemap$file)
 gs2 <- parseWorkspace(ws2, name=sampleGroup, keywords=keywords2import,
-                      path=batch2FcsDirPath)
+                      path=ws2_filemap)
 png(file.path(qcOutDir, "Batch2GatingTree.png"))
 plot(gs2)
 dev.off()

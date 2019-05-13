@@ -10,8 +10,10 @@ This repository contains code to perform COMPASS analysis on Intracellular Cytok
 
 ```
 ├── data  
-    ├── 20170518_HiRisk_VisitA_Only.txt (This file maps each sample to disease status)  
+    ├── 20170518_HiRisk_VisitA_Only_1.txt (This file maps each sample to disease status)  
     ├── ImmPort_FCS_FileMapping.tsv (This file is used to move and rename downloaded FCS files)
+    ├── flowJoWorkspace_sampleID_FileMapping.tsv (Maps FCS files to FlowJo workspace sampleID. Needed due to modification of FCS keywords by Immport.)
+    ├── Flow_cytometry_result (Folder containing FCS files downloaded from Immport)
     ├── NonTBAgs  
     |   ├── 20180207_OMIP14_Batch1  
     |   |   ├── 20180209_NonTB_Antgns_OMIP14.xml  
