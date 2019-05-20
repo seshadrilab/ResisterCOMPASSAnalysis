@@ -1,12 +1,13 @@
 # COMPASS analysis of M. tuberculosis Resisters and Non-Resisters from Uganda
 
-This repository contains code to perform COMPASS analysis on Intracellular Cytokine Staining data from the Ugandan Resister and Non-Resister blood samples.
+This repository contains code to perform COMPASS analysis on Intracellular Cytokine Staining data from the Ugandan Resister and Non-Resister blood samples.  
+See the accompanying paper published in Nature Medicine in May 2019, titled [IFN-γ-independent immune markers of Mycobacterium tuberculosis exposure](https://www.nature.com/articles/s41591-019-0441-3)
 
 ## Running the analysis
 
 1. First clone or download this repository. The code depends on the current directory structure.  
-2. Next, install the R packages listed under the Dependencies section.
-3. Download the Resister cohort flow data from ImmPort (LINK TO BE ADDED), place it into the `data` subfolder, and unzip it. After running the `0_Copy_and_Rename_FCS_Files.R` script, the `data` subfolder will have the following structure:
+2. Next, install the R packages listed under the Dependencies section.  
+3. Download the [Resister cohort flow data from ImmPort study accession SDY1385](https://www.immport.org/shared/study/SDY1385), place it into the `data` subfolder, and unzip it. You will want to download the folder `Browse Shared Data > SDY1385 > ResultFiles > Flow_cytometry_result (375 files)`. After running the `0_Copy_and_Rename_FCS_Files.R` script in step 4, the `data` subfolder will have the following structure:  
 
 ```
 ├── data  
