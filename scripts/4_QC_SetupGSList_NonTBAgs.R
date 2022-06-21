@@ -51,7 +51,7 @@ keywords2import=c("PATIENT ID", "Comp", "Antigen", "PLATE NAME", "TUBE NAME", "W
 sampleGroup <- "Samples"
 
 cs2 <- cytoset()
-quietly(pmap(file_map %>% dplyr::filter(grepl("^nonTBAgs", New_Folder_Path) & grepl("Batch2", New_Folder_Path) & !grepl("Compensation", Original_Name)) %>%
+quietly(pmap(file_map %>% dplyr::filter(grepl("^NonTBAgs", New_Folder_Path) & grepl("Batch2", New_Folder_Path) & !grepl("Compensation", Original_Name)) %>%
                dplyr::select(New_Folder_Path, Original_Name, flowJo_xml_sampleID),
              function(New_Folder_Path, Original_Name, flowJo_xml_sampleID) {
                cat(sprintf("Loading %s/%s for sampleID %s\n", New_Folder_Path, Original_Name, flowJo_xml_sampleID))
