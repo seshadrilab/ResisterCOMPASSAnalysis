@@ -29,7 +29,7 @@ row_ann_colors <- list(`Status` = ResisterStatusColors)
 grouping <- "Status"
 outdir <- file.path(projectDir, "out/PostCompassPlots/NonTBAgs")
 gsListPath <- file.path(projectDir, "out/GatingSets/AllBatchesForCompass_NonTBAgs")
-gs <- load_gslist(gsListPath)
+gs <- load_gs(gsListPath)
 
 cd8CompassResultDir <- file.path(projectDir, "out/CompassOutput/NonTBAgs/CD8")
 CD8CEFCompassResult <- readRDS(file.path(cd8CompassResultDir, "8+_CEF/COMPASSResult_8+_CEF.rds"))
@@ -70,6 +70,9 @@ cd8cefPFSPlot$plot
 svglite(file=file.path(outdir, "FigureS1B_CEF_CD8_Polyfunctionality_svglite.svg"), width=7, height=6)
 plot_grid(cd8cefPFSPlot$plot + scale_fill_manual(values = ResisterStatusColors) + theme(legend.position="none"), labels=c("B"))
 dev.off()
+
+# Reload GatingSet to avoid weird segfault error in next function
+gs <- load_gs(gsListPath)
 
 # Flowplot IFNg+
 # Panel C

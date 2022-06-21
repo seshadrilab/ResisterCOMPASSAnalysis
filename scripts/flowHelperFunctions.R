@@ -88,7 +88,7 @@ boxplot.cell.counts <- function(flowJoXmlPath=NULL,
   
   # Obtain the subpopulation cell counts
   # Counts indicate flowCore recomputed counts, not FlowJo amounts
-  popStats <- flowWorkspace::getPopStats(gs, subpopulations = subpopulation)
+  popStats <- flowWorkspace::gs_pop_get_count_fast(gs, subpopulations = subpopulation)
   
   # Merge the pData and popStats data tables together.
   annotatedCounts <- merge(flowWorkspace::pData(gs), popStats, by="name")
@@ -113,7 +113,7 @@ boxplot.cell.counts <- function(flowJoXmlPath=NULL,
                            "\nGrouped by ", stratifyByLevel1), collapse="")
       plotCounts <- ggplot2::ggplot(annotatedCounts, ggplot2::aes(x=factor(get(stratifyByLevel1)), y=Count)) +
         ggplot2::geom_boxplot() +
-        ggplot2::stat_summary(fun.y=mean, geom="point", shape=8, size=4) +
+        ggplot2::stat_summary(fun=mean, geom="point", shape=8, size=4) +
         ggplot2::geom_point(shape=16) +
         ggplot2::labs(title=plotTitle) + ggplot2::xlab(stratifyByLevel1) +
         ggplot2::geom_hline(yintercept=threshold) +
@@ -253,21 +253,21 @@ prepare.gating.set.list.4.compass <- function(xmlFiles=NULL,
   
   # Now all the GatingSets are in gsList.
   # Next drop redundant nodes and channels in the GatingSets to help make them merge-able.
-  gsGroups <- flowWorkspace::groupByTree(gsList)
-  nodes2Remove <- flowWorkspace::checkRedundantNodes(gsGroups)
+  gsGroups <- flowWorkspace::gs_split_by_tree(gsList)
+  nodes2Remove <- flowWorkspace::gs_check_redundant_nodes(gsGroups)
   if (!(length(nodes2Remove) == 1 & length(nodes2Remove[[1]]) == 0)) {
     paste(as.character(Sys.time()), "WARNING: Removing nodes:\n")
     paste(nodes2Remove)
     paste("\n")
   }
-  flowWorkspace::dropRedundantNodes(gsGroups, nodes2Remove) # original GatingSets in gsList are modified via external pointers
+  flowWorkspace::gs_remove_redundant_nodes(gsGroups, nodes2Remove) # original GatingSets in gsList are modified via external pointers
   
   # And then drop any redundant channels in the GatingSets.
   # This specifically removes channels from a GatingSet if there are no nodes which have
   # the given channel as an associated gating channel/marker.
   # TODO: I am modifying these in place and overwriting the old gsList contents. Not sure if that's kosher.
   for (i in seq_along(gsList)) {
-    gsList[[i]] <- flowWorkspace::dropRedundantChannels(gsList[[i]])
+    gsList[[i]] <- flowWorkspace::gs_remove_redundant_channels(gsList[[i]])
   }
   
   # There is no surefire way to obtain pairs of matched marker names and channel names,
@@ -275,30 +275,32 @@ prepare.gating.set.list.4.compass <- function(xmlFiles=NULL,
   # Obtain the common marker and channel pairings:
   commonMarkerChannelMappings <- Reduce(merge, lapply(gsList, function(x) {
     # parameters of the first flowFrame in x, the GatingSet
-    pData(parameters(flowWorkspace::getData(x[[1]])))[,1:2] }))
+    pData(flowCore::parameters(flowWorkspace::gh_pop_get_data(x[[1]])))[,1:2] }))
   paste("Common marker and channel pairings across all GatingSets:")
   print(commonMarkerChannelMappings)
   
   # The GatingSets should now be ready to combine into one GatingSetList
-  gsList4COMPASS <- flowWorkspace::GatingSetList(gsList)
+  gs4COMPASS <- flowWorkspace::merge_list_to_gs(gsList)
   # Subset the GatingSetList based on keyword4samples2exclude, if applicable
   # It might be more correct to do this when the GatingSets are first read in (prior to the marker/gating checking above), but this way is quicker
   if (!is.null(keyword4samples2exclude) & !is.null(samples2exclude)) {
-    if (keyword4samples2exclude %in% colnames(pData(gsList4COMPASS))) {
-      gsList4COMPASS <- subset(gsList4COMPASS, !grepl(paste(samples2exclude, collapse="|"), factor(get(keyword4samples2exclude))))
+    if (keyword4samples2exclude %in% colnames(pData(gs4COMPASS))) {
+      gs4COMPASS <- subset(gs4COMPASS, !grepl(paste(samples2exclude, collapse="|"), factor(get(keyword4samples2exclude))))
     } else {
-      message(paste(keyword4samples2exclude, " not in colnames(pData(gsList4COMPASS))"))
+      message(paste(keyword4samples2exclude, " not in colnames(pData(gs4COMPASS))"))
     }
   }
   
   if (returnGSList) {
-    gsList4COMPASS
+    gs4COMPASS
   } else {
     # Save the new GatingSetList to disk
     # Delete outDir and its subdirectories
-    paste(c(as.character(Sys.time()), " Overwriting outDir: ", outDir, "\n"), collapse="")
-    unlink(outDir, recursive=TRUE)
-    flowWorkspace::save_gslist(gsList4COMPASS, path=outDir)
+    if(dir.exists(outDir)) {
+      message(paste(c(as.character(Sys.time()), " Overwriting outDir: ", outDir, "\n"), collapse=""))
+      unlink(outDir, recursive=TRUE)
+    }
+    flowWorkspace::save_gs(gs4COMPASS, path=outDir)
     # Close all the workspaces, if applicable
     if (length(wsList) > 0) {
       for (i in 1:length(wsList)) {
@@ -848,6 +850,7 @@ fs.plot <- function(compassResultOrPath,
 #' @import flowWorkspace
 #' @import grDevices
 #' @import svglite
+#' @import tidyverse
 #' @export
 #' @keywords Flow Plot Polyfunctional Subset
 #' @examples
@@ -913,30 +916,25 @@ highlight.boolean.subset.flow.plot <- function(path,
     loadGSListOrGS(path)
   }
   
-  metaSub <- flowWorkspace::pData(gs)[intersect(which(flowWorkspace::pData(gs)[,individualsCol] %in% individual),
-                                                union(which(flowWorkspace::pData(gs)[conditioncol] == exp),
-                                                      which(flowWorkspace::pData(gs)[conditioncol] == ctrl))),]
+  metaSub <- flowWorkspace::pData(gs) %>% dplyr::filter(!!as.symbol(individualsCol) %in% individual & !!as.symbol(conditioncol) %in% c(exp, ctrl))
   gsSub <- gs[rownames(metaSub)]
-  
+
   boolsubsetName <- gsub("&", "and", gsub("!", "not_", gsub("/", ":", boolsubset)))
   addBooleanGate(gs=gs, booleanSubset=boolsubset, parentGate=parentsubset, overrideGate=FALSE, booleanGateName=boolsubsetName)
-  boolsubsetPopStats <- flowWorkspace::getPopStats(gsSub, flowJo=FALSE, subpopulations=c(boolsubsetName))
-  
+  boolsubsetName_full_path <- paste0(gs_pop_get_parent(gs, boolsubsetName), "/", boolsubsetName)
+  boolsubsetPopStats <- flowWorkspace::gs_pop_get_count_fast(gsSub, flowJo=FALSE,
+                                                             subpopulations=boolsubsetName_full_path)
+
   # When we plot the parent subset, we don't want to plot the events which are in the overlayed boolean subset as well as in the parent subset twice.
   # So for the purposes of plotting only, define a new parent subset which has the overlayed plots removed from it.
   parentsubset_ForPlot_name <- sprintf("%s_no%s_ForPlot", parentsubset, boolsubsetName)
   addBooleanGate(gs=gs, booleanSubset=sprintf("%s&!%s", parentsubset, boolsubsetName), parentGate=parentsubset, overrideGate=FALSE, booleanGateName=parentsubset_ForPlot_name)
-  
-  # gsSubMetaData <- flowWorkspace::pData(gsSub)[,2:length(colnames(flowWorkspace::pData(gsSub)))]
+
   gsSubMetaData <- flowWorkspace::pData(gsSub)
   gsSubMetaData <- cbind(gsSubMetaData, rownames(gsSubMetaData))
   colnames(gsSubMetaData)[length(colnames(gsSubMetaData))] <- "row.names"
   gsSubMetaDataCols <- if (conditioncol2 == ".") { c("row.names", conditioncol) } else
   {c("row.names", conditioncol, conditioncol2) }
-  
-  # print(gsSubMetaDataCols)
-  # print(head(boolsubsetPopStats[, c("name", "Population", "Count", "ParentCount")]))
-  # print(head(gsSubMetaData[, gsSubMetaDataCols]))
   
   boolsubsetPopStatsMerge <- merge(x=boolsubsetPopStats[, c("name", "Population", "Count", "ParentCount")], y=gsSubMetaData[, gsSubMetaDataCols], by.x="name", by.y="row.names")
   
@@ -944,19 +942,9 @@ highlight.boolean.subset.flow.plot <- function(path,
   byCols <- c(conditioncol, conditioncol2)#, individualsCol)
   byCols <- unique(byCols[byCols != "."])
   boolsubsetPopStatsMergeCollapsed <- rbind(boolsubsetPopStatsMerge[, {
-    # cols2makeUnique <- .BY #.BY[, c("Day", "Treatment")]
-    # cols2makeUnique <- unlist(lapply(cols2makeUnique, function(x) {
-    #   x <- unique(x[!is.na(x)])
-    #   if(length(x) == 1) as.character(x)
-    #   else if(length(x) == 0) NA_character_
-    #   else "multiple"
-    # }))
     cols2Sum <- .SD[, c("Count", "ParentCount")]
     cols2Sum <- colSums(cols2Sum)
     data.table(t(unlist(cols2Sum)))
-    #cbind(data.table(t(unlist(cols2makeUnique))), data.table(t(unlist(cols2Sum))))
-    #cbind(.BY, data.table(t(unlist(cols2Sum))))
-    #cbind(data.table(t(unlist(cols2makeUnique))), data.table(t(unlist(cols2Sum))))
   },
   by=byCols])
   
@@ -1014,13 +1002,6 @@ highlight.boolean.subset.flow.plot <- function(path,
                        size=if(is.null(percentage_fontsize)) { max(1, themeBaseSize-13) } else { percentage_fontsize }) +
     ggplot2::scale_alpha(guide = 'none') +
     ggplot2::theme_set(ggplot2::theme_gray(base_size = themeBaseSize))
-  # ggplot2::theme(plot.title=ggplot2::element_text(vjust=-0.8, hjust=0.5, size=19),
-  #                plot.subtitle=ggplot2::element_text(size=12),
-  #                axis.text=ggplot2::element_text(size=14),
-  #                axis.title=ggplot2::element_text(size=18),
-  #                strip.text=ggplot2::element_text(size=16),
-  #                legend.title=ggplot2::element_text(size=15),
-  #                legend.text=ggplot2::element_text(size=12))
   if(!is.null(xlims) && is.null(ylims)) {
     flowplot <- flowplot + ggplot2::coord_cartesian(xlim = xlims) 
   } else if(!is.null(ylims) && is.null(xlims)) {
@@ -1161,11 +1142,11 @@ compass.subset.comparisons <- function(compassResultOrPath,
     call <- substitute(flowWorkspace::booleanFilter(v), list(v = as.symbol(boolSubset)))
     g <- eval(call)
     boolSubsetNodeName <- paste0(parentSubset, ":", boolSubset)
-    if(boolSubsetNodeName %in% flowWorkspace::getNodes(gs[[1]], path="auto")) {
+    if(boolSubsetNodeName %in% flowWorkspace::gs_get_pop_paths(gs[[1]], path="auto")) {
       # If the gate already exists, keep it
       message(paste0("Gate ", boolSubsetNodeName, " already exists. Keeping old gate..."))
     } else {
-      flowWorkspace::add(gs, g, parent = parentSubset, name=boolSubsetNodeName)
+      flowWorkspace::gs_pop_add(gs, g, parent = parentSubset, name=boolSubsetNodeName)
       newNodeAdded <- TRUE
     }
   }
@@ -1176,7 +1157,8 @@ compass.subset.comparisons <- function(compassResultOrPath,
   }
   
   compassPopStats <- lapply(paste0(parentSubset, ":", compassSubsetsFilteredAlpha), function(boolSubsetNodeName) {
-    d <- flowWorkspace::getPopStats(gs, subpopulation=boolSubsetNodeName)
+    boolSubsetNodeName_full_path <- paste0(gs_pop_get_parent(gs, boolSubsetNodeName), "/", boolSubsetNodeName)
+    d <- flowWorkspace::gs_pop_get_count_fast(gs, subpopulation=boolSubsetNodeName_full_path)
     d[,boolSubsetNodeName] <- d$Count / d$ParentCount
     d[, c("name", boolSubsetNodeName), with=FALSE]
   })
@@ -1468,14 +1450,14 @@ addBooleanGate <- function(gs,
     booleanGateName
   }
   message("Checking for gate ", booleanSubsetName, "\n in the first GatingHierarchy")
-  if(booleanSubsetName %in% getNodes(gs[[1]], path="auto")) {
+  if(booleanSubsetName %in% gs_get_pop_paths(gs[[1]], path="auto")) {
     # If the gate already exists, decide what to do with it.
     if(overrideGate) {
       message(paste0("Gate ", booleanSubsetName, " already exists. Deleting old gate and adding new gate..."))
       call <- substitute(flowWorkspace::booleanFilter(v), list(v = as.symbol(booleanSubset)))
       g <- eval(call)
-      flowWorkspace::Rm(booleanSubsetName, gs)
-      flowWorkspace::add(gs, g, parent = parentGate, name=booleanSubsetName)
+      flowWorkspace::gs_pop_remove(gs, booleanSubsetName)
+      flowWorkspace::gs_pop_add(gs, g, parent = parentGate, name=booleanSubsetName)
       flowWorkspace::recompute(gs, booleanSubsetName)
     } else {
       message(paste0("Gate ", booleanSubsetName, " already exists. Keeping old gate..."))
@@ -1485,7 +1467,7 @@ addBooleanGate <- function(gs,
     message(paste0("Adding new gate ", booleanSubsetName, " to GatingSet/GatingSetList..."))
     call <- substitute(flowWorkspace::booleanFilter(v), list(v = as.symbol(booleanSubset)))
     g <- eval(call)
-    flowWorkspace::add(gs, g, parent = parentGate, name=booleanSubsetName)
+    flowWorkspace::gs_pop_add(gs, g, parent = parentGate, name=booleanSubsetName)
     flowWorkspace::recompute(gs, booleanSubsetName)
   }
 }

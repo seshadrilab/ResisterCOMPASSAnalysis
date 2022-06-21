@@ -64,12 +64,14 @@ stringr
 survival # required by coin
 svglite # for saving plots
 tidyr
+tidyverse
 ```
 
 You can use bioconductor or `devtools::install_github()` to install the relevant flow cytometry packages:
 
 ```
 COMPASS
+CytoML
 flowCore
 flowWorkspace
 ggcyto
@@ -79,3 +81,19 @@ ncdfFlow
 [openCyto](https://bioconductor.org/packages/release/bioc/html/openCyto.html) should install flowWorkspace, flowCore, and ncdfFlow.  
 [ggcyto](https://bioconductor.org/packages/release/bioc/html/ggcyto.html) for bivariate flow dot plots.  
 [COMPASS](https://bioconductor.org/packages/release/bioc/html/COMPASS.html)  
+[CytoML](https://bioconductor.org/packages/release/bioc/html/CytoML.html)
+
+Quick install:
+```
+# Note: on ubuntu 20.04, you may need to install libfontconfig1-dev first
+install.packages(c("BH", "RcppArmadillo", "coin", "cowplot", "data.table", "extrafont",
+  "ggplot2", "ggsignif", "here", "plyr", "stringr", "survival",
+  "svglite", "tidyr", "tidyverse))
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("openCyto")
+BiocManager::install("CytoML")
+BiocManager::install("ggcyto")
+BiocManager::install("COMPASS")
+```

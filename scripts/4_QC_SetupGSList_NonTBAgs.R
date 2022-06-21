@@ -1,7 +1,8 @@
 #!/usr/bin/env Rscript
+library(CytoML)
 library(here)
 library(flowWorkspace)
-library(plyr)
+library(tidyverse)
 library(data.table)
 
 projectDir <- here::here()
@@ -14,49 +15,66 @@ flowJoXmlPath2 <- file.path(projectDir, "data/NonTBAgs/20180214_OMIP14_Batch2/20
 batch1FcsDirPath <- file.path(projectDir, "data/NonTBAgs/20180207_OMIP14_Batch1/20180209_RSTR_NonTB_Atgns_Omip14_FCS")
 batch2FcsDirPath <- file.path(projectDir, "data/NonTBAgs/20180214_OMIP14_Batch2/20180216_RSTR_NonTB_Atgns_Omip14_FCS")
 
+file_map <- read.table(here::here("data/ImmPort_FCS_FileMapping.tsv"), sep = "\t", header = T,
+                           colClasses = c("character", "character", "character", "character", "numeric"))
+
 # Additional variables
 qcOutDir <- file.path(projectDir, "out/QC/NonTBAgs")
 patientStatusFilePath <- file.path(projectDir, "data/20170518_HiRisk_VisitA_Only_1.txt")
 gatingSetListOutDir <- file.path(projectDir, "out/GatingSets/AllBatchesForCompass_NonTBAgs")
-flowJoWorkspace_sampleID_FileMapping <- read.table(file.path(projectDir, "data/flowJoWorkspace_sampleID_FileMapping.tsv"), sep = "\t",
-                                                   header = T, colClasses = c("character", "numeric", "character"))
 
 # First read in the flowJoXmlPaths with desired keywords
-ws1 <- openWorkspace(flowJoXmlPath1)
+ws1 <- open_flowjo_xml(flowJoXmlPath1)
 # getKeywords(ws1, "14521.fcs")
 keywords2import=c("PATIENT ID", "Comp", "Antigen", "PLATE NAME", "TUBE NAME", "WELL ID")
 sampleGroup <- "Samples"
-ws1_filemap <- subset(flowJoWorkspace_sampleID_FileMapping, Experiment == "NonTBAgs_B1")[, c("sampleID", "file")]
-missingFiles_b1 <- c("Specimen_001_D2_D02_122.fcs", "Specimen_001_D4_D04_124.fcs", "Specimen_001_D6_D06_126.fcs", "Specimen_001_D8_D08_128.fcs", "Specimen_001_E2_E02_130.fcs", "Specimen_001_E4_E04_132.fcs", "Specimen_001_E6_E06_134.fcs", "Specimen_001_E8_E08_136.fcs", "Specimen_001_F2_F02_138.fcs", "Specimen_001_F4_F04_140.fcs", "Specimen_001_F6_F06_142.fcs", "Specimen_001_F8_F08_144.fcs")
-ws1_filemap <- ws1_filemap[which(!(ws1_filemap$file %in% missingFiles_b1)),]
-ws1_filemap$file <- file.path(batch1FcsDirPath, ws1_filemap$file)
-gs1 <- parseWorkspace(ws1, name=sampleGroup, keywords=keywords2import,
-                      path=ws1_filemap)
+
+cs1 <- cytoset()
+quietly(pmap(file_map %>% dplyr::filter(grepl("^NonTBAgs", New_Folder_Path) & grepl("Batch1", New_Folder_Path) & !grepl("Compensation", Original_Name)) %>%
+               dplyr::select(New_Folder_Path, Original_Name, flowJo_xml_sampleID),
+             function(New_Folder_Path, Original_Name, flowJo_xml_sampleID) {
+               cat(sprintf("Loading %s/%s for sampleID %s\n", New_Folder_Path, Original_Name, flowJo_xml_sampleID))
+               cf_tmp <- load_cytoframe_from_fcs(here::here("data", New_Folder_Path, Original_Name))
+               flowJo_xml_sample_name <- fj_ws_get_samples(ws1) %>% dplyr::filter(sampleID == flowJo_xml_sampleID) %>% dplyr::pull(name)
+               # below, flowjo_to_gatingset will use the name stored in flowJo_xml_sample_name to match the cytoframe to the flowjo workspace entry
+               cs_add_cytoframe(cs = cs1, sn = flowJo_xml_sample_name, cf = cf_tmp)  
+             }))
+
+gs1 <- flowjo_to_gatingset(ws1, name=sampleGroup, cytoset = cs1, keywords=keywords2import)
+
 png(file.path(qcOutDir, "Batch1GatingTree.png"))
 plot(gs1)
 dev.off()
 
-ws2 <- openWorkspace(flowJoXmlPath2)
+ws2 <- open_flowjo_xml(flowJoXmlPath2)
 keywords2import=c("PATIENT ID", "Comp", "Antigen", "PLATE NAME", "TUBE NAME", "WELL ID")
 sampleGroup <- "Samples"
-ws2_filemap <- subset(flowJoWorkspace_sampleID_FileMapping, Experiment == "NonTBAgs_B2")[, c("sampleID", "file")]
-missingFiles_b2 <- c("Specimen_001_F2_F02_138.fcs", "Specimen_001_F4_F04_140.fcs", "Specimen_001_F6_F06_142.fcs", "Specimen_001_F8_F08_144.fcs")
-ws2_filemap <- ws2_filemap[which(!(ws2_filemap$file %in% missingFiles_b2)),]
-ws2_filemap$file <- file.path(batch2FcsDirPath, ws2_filemap$file)
-gs2 <- parseWorkspace(ws2, name=sampleGroup, keywords=keywords2import,
-                      path=ws2_filemap)
+
+cs2 <- cytoset()
+quietly(pmap(file_map %>% dplyr::filter(grepl("^nonTBAgs", New_Folder_Path) & grepl("Batch2", New_Folder_Path) & !grepl("Compensation", Original_Name)) %>%
+               dplyr::select(New_Folder_Path, Original_Name, flowJo_xml_sampleID),
+             function(New_Folder_Path, Original_Name, flowJo_xml_sampleID) {
+               cat(sprintf("Loading %s/%s for sampleID %s\n", New_Folder_Path, Original_Name, flowJo_xml_sampleID))
+               cf_tmp <- load_cytoframe_from_fcs(here::here("data", New_Folder_Path, Original_Name))
+               flowJo_xml_sample_name <- fj_ws_get_samples(ws2) %>% dplyr::filter(sampleID == flowJo_xml_sampleID) %>% dplyr::pull(name)
+               # below, flowjo_to_gatingset will use the name stored in flowJo_xml_sample_name to match the cytoframe to the flowjo workspace entry
+               cs_add_cytoframe(cs = cs2, sn = flowJo_xml_sample_name, cf = cf_tmp)  
+             }))
+
+gs2 <- flowjo_to_gatingset(ws2, name=sampleGroup, cytoset = cs2, keywords=keywords2import)
+
 png(file.path(qcOutDir, "Batch2GatingTree.png"))
 plot(gs2)
 dev.off()
 
 # The batches have the same Gating tree layout. However, remove the extra 8+/4+ gates from both batches
-Rm("8+/4+", gs1)
-Rm("8+/4+", gs2)
+gs_pop_remove(gs1, "8+/4+")
+gs_pop_remove(gs2, "8+/4+")
 
 # Read in the patient status mappings and add to GatingSet metadata
 patientStatusFile <- read.table(patientStatusFilePath, header = T, sep = "\t")[,c("RS_SUB_ACCESSION_NO", "STATUS_TST")]
 colnames(patientStatusFile) <- c("PATIENT ID", "Status")
-patientStatusFile$Status <- revalue(patientStatusFile$Status, c("PERSISTENT NEG." = "RSTR", "TST+ CONTROL" = "LTBI"))
+patientStatusFile$Status <- dplyr::recode(patientStatusFile$Status, "PERSISTENT NEG." = "RSTR", "TST+ CONTROL" = "LTBI")
 pData(gs1)$Batch <- "Batch 1"
 pData(gs2)$Batch <- "Batch 2"
 pData(gs1)$tmpRownames <- rownames(pData(gs1))
@@ -89,8 +107,8 @@ nodes2Copy <- c("4+/TNF+", "4+/IL17a+", "4+/IL4+", "4+/IL2+", "4+/IFNg+", "4+/CD
 parents <- c("DPos", "DNeg")
 for (parent in parents) {
   for (nodeName in nodes2Copy) {
-    add(gs1, getGate(gs1, nodeName), parent=parent)
-    add(gs2, getGate(gs2, nodeName), parent=parent)
+    gs_pop_add(gs1, gs_pop_get_gate(gs1, nodeName), parent=parent)
+    gs_pop_add(gs2, gs_pop_get_gate(gs2, nodeName), parent=parent)
   }
   recompute(gs1, parent)
   recompute(gs2, parent)
@@ -196,9 +214,9 @@ boxplot.cell.counts(gatingSet=subset(gs2, `PLATE NAME` == "Plate 4"),
                     subpopulation="/S/LV/L/3+/4+",
                     batch="Batch 2 Plate 4",
                     threshold=3000)
-cd4CountsBatch1 <- merge(getPopStats(gs1)[which(getPopStats(gs1)$Population == "4+"),], pData(gs1), by.x = "name", by.y = "tmpRownames")
+cd4CountsBatch1 <- merge(gs_pop_get_count_fast(gs1)[which(gs_pop_get_count_fast(gs1)$Population == "/S/LV/L/3+/4+"),], pData(gs1), by.x = "name", by.y = "tmpRownames")
 cd4CountsBatch1 <- cd4CountsBatch1[order(cd4CountsBatch1$Count),]
-cd4CountsBatch2 <- merge(getPopStats(gs2)[which(getPopStats(gs2)$Population == "4+"),], pData(gs2), by.x = "name", by.y = "tmpRownames")
+cd4CountsBatch2 <- merge(gs_pop_get_count_fast(gs2)[which(gs_pop_get_count_fast(gs2)$Population == "/S/LV/L/3+/4+"),], pData(gs2), by.x = "name", by.y = "tmpRownames")
 cd4CountsBatch2 <- cd4CountsBatch2[order(cd4CountsBatch2$Count),]
 
 # Rename columns, e.g. Count and ParentCount columns to CD4_Count and CD3_Count.

@@ -29,7 +29,7 @@ row_ann_colors <- list(`Status` = ResisterStatusColors)
 grouping <- "Status"
 outdir <- file.path(projectDir, "out/PostCompassPlots/TBAgs")
 gsListPath <- file.path(projectDir, "out/GatingSets/AllBatchesForCompass_TBAgs")
-gs <- load_gslist(gsListPath)
+gs <- load_gs(gsListPath)
 
 cd4CompassResultDir <- file.path(projectDir, "out/CompassOutput/TBAgs/CD4")
 CD4PP1CompassResult <- readRDS(file.path(cd4CompassResultDir, "4+_Peptide Pool 1/COMPASSResult_4+_Peptide Pool 1.rds"))
@@ -48,12 +48,15 @@ p <- print(plot(CD4PP1CompassResult,
                 row_annotation_colors=row_ann_colors))
 
 svg(filename=file.path(outdir, "Figure3A_PP1_CD4_Heatmap.svg"), width=10, height=11)
-grid.draw(p)
+print(grid.draw(p))
 dev.off()
 
 svglite(file=file.path(outdir, "Figure3A_PP1_CD4_Heatmap_svglite.svg"), width=10, height=11)
-grid.draw(p)
+print(grid.draw(p))
 dev.off()
+
+# Reload GatingSet to avoid weird segfault error in next function
+gs <- load_gs(gsListPath)
 
 # Generate Polyfunctionality Score Boxplot for Panel B
 cd4pp1PFSPlot <- fs.plot(gsOrGsListOrPath=gs,
@@ -74,7 +77,7 @@ cd4pp1PFSPlot$plot + scale_fill_manual(values = ResisterStatusColors)
 
 
 svglite(file=file.path(outdir, "Figure3B_PP1_CD4_Polyfunctionality_svglite.svg"), width=5, height=6)
-plot_grid(cd4pp1PFSPlot$plot + scale_fill_manual(values = ResisterStatusColors) + theme(legend.position="none"), labels=c("B"))
+print(plot_grid(cd4pp1PFSPlot$plot + scale_fill_manual(values = ResisterStatusColors) + theme(legend.position="none"), labels=c("B")))
 dev.off()
 
 # Panel C Boxplots
@@ -107,8 +110,11 @@ CD4PP1_compass_subset_boxplots <- boxplotsCompassSubsetBgCorrPropStratified(CD4P
 CD4PP1_compass_subset_boxplots
 
 svglite(file=file.path(outdir, "Figure3C_PP1_CD4_COMPASS_Subset_boxplots_svglite.svg"), width=7, height=4)
-plot_grid(CD4PP1_compass_subset_boxplots, labels="C")
+print(plot_grid(CD4PP1_compass_subset_boxplots, labels="C"))
 dev.off()
+
+# Reload GatingSet to avoid weird segfault error in next function
+gs <- load_gs(gsListPath)
 
 # Flowplots D
 # CD154+ IFNg+ IL2+ TNF+ (Four-function IFNg+ subset)
@@ -139,6 +145,10 @@ PP1CD4_flowPlot_IFNgPos <- highlight.boolean.subset.flow.plot(gs=gs,
                                                panel.border = element_rect(fill = NA, color = "black"),
                                                panel.spacing = unit(0,"line"))
 PP1CD4_flowPlot_IFNgPos
+
+# Reload GatingSet to avoid weird segfault error in next function
+gs <- load_gs(gsListPath)
+
 # CD154+, IL2+, TNF+ (i.e. IFNg-)
 PP1CD4_flowPlot_IFNgNeg <- highlight.boolean.subset.flow.plot(gs=gs,
                                                               individualsCol="PATIENT ID",
@@ -169,8 +179,8 @@ PP1CD4_flowPlot_IFNgNeg <- highlight.boolean.subset.flow.plot(gs=gs,
 PP1CD4_flowPlot_IFNgNeg
 
 svglite(file=file.path(outdir, "Figure3D_PP1_CD4_FlowPlots_svglite.svg"), width=11, height=5)
-plot_grid(plotlist=list(as.ggplot(PP1CD4_flowPlot_IFNgPos), as.ggplot(PP1CD4_flowPlot_IFNgNeg)),
-          nrow = 1, labels=c("", ""), rel_widths = c(1,1))
+print(plot_grid(plotlist=list(as.ggplot(PP1CD4_flowPlot_IFNgPos), as.ggplot(PP1CD4_flowPlot_IFNgNeg)),
+          nrow = 1, labels=c("", ""), rel_widths = c(1,1)))
 dev.off()
 
 ###############################################################
@@ -185,12 +195,15 @@ p <- print(plot(CD4PP2CompassResult,
                 row_annotation_colors=row_ann_colors))
 
 svg(filename=file.path(outdir, "Figure4A_PP2_CD4_Heatmap.svg"), width=10, height=11)
-grid.draw(p)
+print(grid.draw(p))
 dev.off()
 
 svglite(file=file.path(outdir, "Figure4A_PP2_CD4_Heatmap_svglite.svg"), width=10, height=11)
-grid.draw(p)
+print(grid.draw(p))
 dev.off()
+
+# Reload GatingSet to avoid weird segfault error in next function
+gs <- load_gs(gsListPath)
 
 # Generate Polyfunctionality Score Boxplot for Panel B
 cd4PP2PFSPlot <- fs.plot(gsOrGsListOrPath=gs,
@@ -210,8 +223,11 @@ cd4PP2PFSPlot <- fs.plot(gsOrGsListOrPath=gs,
 cd4PP2PFSPlot$plot
 
 svglite(file=file.path(outdir, "Figure4B_PP2_CD4_Polyfunctionality_svglite.svg"), width=5, height=6)
-plot_grid(cd4PP2PFSPlot$plot + scale_fill_manual(values = ResisterStatusColors) + theme(legend.position="none"), labels=c("B"))
+print(plot_grid(cd4PP2PFSPlot$plot + scale_fill_manual(values = ResisterStatusColors) + theme(legend.position="none"), labels=c("B")))
 dev.off()
+
+# Reload GatingSet to avoid weird segfault error in next function
+gs <- load_gs(gsListPath)
 
 # Flowplots C
 # CD154+ IFNg+ IL2+ TNF+ (Four-function IFNg+ subset)
@@ -245,8 +261,8 @@ PP2CD4_flowPlot_IFNgPos <- highlight.boolean.subset.flow.plot(gs=gs,
 PP2CD4_flowPlot_IFNgPos
 
 svglite(file=file.path(outdir, "Figure4C_PP2_CD4_FlowPlots_svglite.svg"), width=4, height=4.5)
-plot_grid(as.ggplot(PP2CD4_flowPlot_IFNgPos),
-          ncol = 1, labels=c(""))
+print(plot_grid(as.ggplot(PP2CD4_flowPlot_IFNgPos),
+          ncol = 1, labels=c("")))
 dev.off()
 
 #####################################################
@@ -260,12 +276,15 @@ p <- print(plot(CD4TBLysCompassResult,
                 fontsize=16, fontsize_row=16, fontsize_col=12,
                 row_annotation_colors=row_ann_colors))
 svg(filename=file.path(outdir, "Figure4D_TBLys_CD4_Heatmap.svg"), width=10, height=11)
-grid.draw(p)
+print(grid.draw(p))
 dev.off()
 
 svglite(file=file.path(outdir, "Figure4D_TBLys_CD4_Heatmap_svglite.svg"), width=10, height=11)
-grid.draw(p)
+print(grid.draw(p))
 dev.off()
+
+# Reload GatingSet to avoid weird segfault error in next function
+gs <- load_gs(gsListPath)
 
 # Generate Polyfunctionality Score Boxplot for Panel E
 cd4TBLysPFSPlot <- fs.plot(gsOrGsListOrPath=gs,
@@ -285,8 +304,11 @@ cd4TBLysPFSPlot <- fs.plot(gsOrGsListOrPath=gs,
 cd4TBLysPFSPlot$plot
 
 svglite(file=file.path(outdir, "Figure4E_PP2_TBLys_Polyfunctionality_svglite.svg"), width=5, height=6)
-plot_grid(cd4TBLysPFSPlot$plot + scale_fill_manual(values = ResisterStatusColors) + theme(legend.position="none"), labels=c("E"))
+print(plot_grid(cd4TBLysPFSPlot$plot + scale_fill_manual(values = ResisterStatusColors) + theme(legend.position="none"), labels=c("E")))
 dev.off()
+
+# Reload GatingSet to avoid weird segfault error in next function
+gs <- load_gs(gsListPath)
 
 # Flowplot F
 # CD154+ IFNg+ IL2+ TNF+ (Four-function IFNg+ subset)
@@ -320,8 +342,8 @@ TBLysCD4_flowPlot_IFNgPos <- highlight.boolean.subset.flow.plot(gs=gs,
 TBLysCD4_flowPlot_IFNgPos
 
 svglite(file=file.path(outdir, "Figure4F_TBLys_CD4_FlowPlots_svglite.svg"), width=4, height=4.5)
-plot_grid(as.ggplot(TBLysCD4_flowPlot_IFNgPos),
-          ncol = 1, labels=c(""))
+print(plot_grid(as.ggplot(TBLysCD4_flowPlot_IFNgPos),
+          ncol = 1, labels=c("")))
 dev.off()
 
 # Panel G and H
@@ -358,7 +380,7 @@ CD4TBLys_compass_subset_boxplots_IFNgPos <- boxplotsCompassSubsetBgCorrPropStrat
 CD4TBLys_compass_subset_boxplots_IFNgPos
 
 svglite(file=file.path(outdir, "Figure4G_TBLys_CD4_IFNgPos_COMPASS_Subset_boxplots_svglite.svg"), width=9, height=5)
-plot_grid(CD4TBLys_compass_subset_boxplots_IFNgPos, labels="G")
+print(plot_grid(CD4TBLys_compass_subset_boxplots_IFNgPos, labels="G"))
 dev.off()
 
 # Boxplots for IFNg- subsets
@@ -381,7 +403,7 @@ CD4TBLys_compass_subset_boxplots_IFNgNeg <- boxplotsCompassSubsetBgCorrPropStrat
                                                                                       legend_position = c(0.14,1))
 CD4TBLys_compass_subset_boxplots_IFNgNeg
 svglite(file=file.path(outdir, "Figure4H_TBLys_CD4_IFNgNeg_COMPASS_Subset_boxplots_svglite.svg"), width=11, height=5)
-plot_grid(CD4TBLys_compass_subset_boxplots_IFNgNeg, labels="H")
+print(plot_grid(CD4TBLys_compass_subset_boxplots_IFNgNeg, labels="H"))
 dev.off()
 
 #####################################################
@@ -394,15 +416,18 @@ p <- print(plot(CD4SEBCompassResult,
                 grouping, show_rownames = FALSE,
                 fontsize=16, fontsize_row=16, fontsize_col=12,
                 row_annotation_colors=row_ann_colors))
-grid.draw(p)
+print(grid.draw(p))
 
 svg(filename=file.path(outdir, "FigureS1D_SEB_CD4_Heatmap.svg"), width=10, height=11)
-grid.draw(p)
+print(grid.draw(p))
 dev.off()
 
 svglite(file=file.path(outdir, "FigureS1D_SEB_CD4_Heatmap_svglite.svg"), width=10, height=11)
-grid.draw(p)
+print(grid.draw(p))
 dev.off()
+
+# Reload GatingSet to avoid weird segfault error in next function
+gs <- load_gs(gsListPath)
 
 # Generate Polyfunctionality Score Boxplot for Panel E
 cd4sebPFSPlot <- fs.plot(gsOrGsListOrPath=gs,
@@ -424,6 +449,9 @@ cd4sebPFSPlot$plot
 svglite(file=file.path(outdir, "FigureS1E_SEB_CD4_Polyfunctionality_svglite.svg"), width=7, height=6)
 plot_grid(cd4sebPFSPlot$plot + scale_fill_manual(values = ResisterStatusColors) + theme(legend.position="none"), labels=c("E"))
 dev.off()
+
+# Reload GatingSet to avoid weird segfault error in next function
+gs <- load_gs(gsListPath)
 
 # Panel F
 # CD154+ IFNg+ IL2+ TNF+ (Four-function IFNg+ subset)
@@ -482,11 +510,11 @@ p <- print(plot(orderHeatmapColumnsByCytokinePresence(CD4PP1CompassResult, "IFNg
                 fixed_column_order = T))
 
 svg(filename=file.path(outdir, "Figure3A_PP1_CD4_Heatmap_alt.svg"), width=10, height=11)
-grid.draw(p)
+print(grid.draw(p))
 dev.off()
 
 svglite(file=file.path(outdir, "Figure3A_PP1_CD4_Heatmap_alt_svglite.svg"), width=10, height=11)
-grid.draw(p)
+print(grid.draw(p))
 dev.off()
 
 # Figure 4
@@ -502,11 +530,11 @@ p <- print(plot(orderHeatmapColumnsByCytokinePresence(CD4PP2CompassResult, "IFNg
                 fixed_column_order = T))
 
 svg(filename=file.path(outdir, "Figure4A_PP2_CD4_Heatmap_alt.svg"), width=10, height=11)
-grid.draw(p)
+print(grid.draw(p))
 dev.off()
 
 svglite(file=file.path(outdir, "Figure4A_PP2_CD4_Heatmap_alt_svglite.svg"), width=10, height=11)
-grid.draw(p)
+print(grid.draw(p))
 dev.off()
 
 # Figure 4
@@ -521,11 +549,11 @@ p <- print(plot(orderHeatmapColumnsByCytokinePresence(CD4TBLysCompassResult, "IF
                 cytokine_height_multiplier=2.5, order_by_max_functionality = F,
                 fixed_column_order = T))
 svg(filename=file.path(outdir, "Figure4D_TBLys_CD4_Heatmap_alt.svg"), width=10, height=11)
-grid.draw(p)
+print(grid.draw(p))
 dev.off()
 
 svglite(file=file.path(outdir, "Figure4D_TBLys_CD4_Heatmap_alt_svglite.svg"), width=10, height=11)
-grid.draw(p)
+print(grid.draw(p))
 dev.off()
 
 # Supplemental Figure 1
@@ -539,12 +567,12 @@ p <- print(plot(orderHeatmapColumnsByCytokinePresence(CD4SEBCompassResult, "IFNg
                 cytokine_annotation_colors=cytokine_annotation_colors,
                 cytokine_height_multiplier=2.5, order_by_max_functionality = F,
                 fixed_column_order = T))
-grid.draw(p)
+print(grid.draw(p))
 
 svg(filename=file.path(outdir, "FigureS1D_SEB_CD4_Heatmap_alt.svg"), width=10, height=11)
-grid.draw(p)
+print(grid.draw(p))
 dev.off()
 
 svglite(file=file.path(outdir, "FigureS1D_SEB_CD4_Heatmap_alt_svglite.svg"), width=10, height=11)
-grid.draw(p)
+print(grid.draw(p))
 dev.off()

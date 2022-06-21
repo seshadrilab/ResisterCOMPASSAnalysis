@@ -14,7 +14,7 @@ ImmPort_dl_path <- file.path(projectDir, "data/Flow_cytometry_result")
 subfolder_paths <- unique(file_map$New_Folder_Path)
 for(subfolder_path in subfolder_paths) {
   subfolder_path_abs <- file.path(projectDir, "data", subfolder_path)
-  print(sprintf("Copying and renaming files to %s", subfolder_path_abs))
+  message(sprintf("Copying and renaming files to %s", subfolder_path_abs))
   if(!dir.exists(subfolder_path_abs)) {
     dir.create(subfolder_path_abs, recursive = T)
   }
